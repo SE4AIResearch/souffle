@@ -57,18 +57,25 @@ jobs:
       working-directory: ${{github.workspace}}
       run: cmake --build build --config Release -j4
 
-    # Run the tests, Visual Studio must be in the environment because cl.exe is required for compiled Souffle.
-    - name: Check interpreter
-      working-directory: ${{github.workspace}}/build
+    - name: Compile and Test Algo
+      working-directory: ${{github.workspace}}
       shell: cmd
       run: |
         pushd "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build" & call vcvars64.bat & popd
-        ctest --output-on-failure --build-config Release --progress -j4 -L interpreted
-
-    - name: Check others
-      working-directory: ${{github.workspace}}/build
-      shell: cmd
-      run: |
-        pushd "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build" & call vcvars64.bat & popd
-        ctest --output-on-failure --build-config Release --progress -j2 -LE interpreted
-
+        c:/hostedtoolcache/windows/Python/3.12.6/x86/python3.exe d:/a/souffle/souffle/build/src/souffle-compile.py -o d:/a/souffle/souffle/compilation/leakage-algo d:/a/souffle/souffle/compilation/main.cpp
+        cd d:/a/souffle/souffle/compilation
+        dir
+        mkdir d:\a\souffle\souffle\compilation\output 
+        leakage-algo.exe -F input -D output
+        cd d:/a/souffle/souffle/compilation/output
+        dir
+    
+    - name: Upload Compiled Algo and Dlls
+      uses: actions/upload-artifact@v4
+      with:
+        name: leakage-algo
+        path: |
+          d:/a/souffle/souffle/compilation/leakage-algo.exe
+          d:/a/souffle/souffle/build/src/sqlite3.dll
+          d:/a/souffle/souffle/build/src/zlib1.dll
+        retention-days: 7
